@@ -1,18 +1,18 @@
 {
-    "name": "pmatseykanets/artdb",
-    "description": "Adds import capability to Laravel's artisan command",
+    "name": "pmatseykanets/artisan-io",
+    "description": "Adds basic import capability to Laravel 5 project",
     "license": "MIT",
     "authors": [
         {
-            "name": "Peter Matseykanets",
+            "name": "Peter Matseykanets"
         }
     ],
     "require": {
-        "php": ">=5.4.0"
+        "php": ">=5.5.9"
     },
     "autoload": {
         "psr-4": {
-            "ArtDb\\": "src/"
+            "ArtisanIo\\": "src/"
         }
     }
 }
