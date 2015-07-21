@@ -4,11 +4,22 @@ This package adds some basic import capability to your Laravel 5 project.
 
 ## Installation
 
-Install through composer
+### Install through composer
 
 ```bash
 $ composer require pmatseykanets/artisan-io
 ```
+
+### Register the command
+
+Open `app\Console\Kernel.php` in the editor of your choice and add the command to the `$commands` array
+
+```php
+protected $commands = [
+    \ArtisanIo\Console\ImportDelimitedCommand::class,
+];
+```
+
 
 ## Usage
 
