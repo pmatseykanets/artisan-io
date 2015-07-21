@@ -29,7 +29,7 @@ class ImportDelimitedCommand extends Command
      */
     protected $signature = 'import:delimited
         {from            : The path to an import file i.e. /tmp/import.csv}
-        {to              : Table or Eloquent class name}
+        {to              : The table or Eloquent class name}
         {--f|fields=     : A comma separated list of fields in a form <field>[:position] i.e. "email:0,name,2". Positions are 0 based}
         {--F|field-file= : Path to a file that contains field definitions. One definition per line}
         {--m|mode=upsert : Import mode [insert|update|upsert]}
@@ -153,7 +153,8 @@ class ImportDelimitedCommand extends Command
         $fileIterator = null;
 
         if ($this->showProgress) {
-            $this->output->progressFinish();
+            //$this->output->progressFinish();
+            $this->progressRemove();
         }
 
         $this->reportImported();
@@ -542,7 +543,8 @@ class ImportDelimitedCommand extends Command
      */
     protected function reportImported()
     {
-        $message = "<info>Imported {$this->imported} record(s) in " . $this->getElapsedTime($this->startedAt) . 'ms.</info>';
+        $message = "<info>Imported {$this->imported} record(s) in " .
+            $this->renderElapsedTime($this->startedAt) . '</info>';
 
         if ($this->dryRun) {
             $message = '<comment>Dry run: </comment>' . $message;
@@ -569,6 +571,27 @@ class ImportDelimitedCommand extends Command
     }
 
     /**
+     * Render elapsed time in a more human readable way
+     *
+     * @param $start
+     * @return string
+     */
+    protected function renderElapsedTime($start)
+    {
+        $elapsed = (microtime(true) - $start) * 1000;
+
+        if ($elapsed < 1000) {
+            return round($elapsed, 2).'ms';
+        }
+
+        if ($elapsed >= 1000 && $elapsed < 60000) {
+            return round($elapsed / 1000, 2).'s';
+        }
+
+        return round($elapsed / 60000, 2).'min';
+    }
+
+    /**
      * Get the elapsed time since a given starting point.
      *
      * @param  int    $start
@@ -579,6 +602,12 @@ class ImportDelimitedCommand extends Command
         return round((microtime(true) - $start) * 1000, 2);
     }
 
+    /**
+     * Interpret escape characters
+     *
+     * @param $value
+     * @return mixed
+     */
     protected function unescape($value)
     {
         return preg_replace_callback(
@@ -650,5 +679,15 @@ class ImportDelimitedCommand extends Command
         }
 
         return realpath($filePath);
+    }
+
+    /**
+     * Removes the progress bar
+     */
+    protected function progressRemove()
+    {
+        $this->output->write("\x0D");
+        $this->output->write(str_repeat(' ', 60)); // Revisit this
+        $this->output->write("\x0D");
     }
 }
