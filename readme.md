@@ -1,6 +1,19 @@
 # artisan-io
 
-This package adds some basic import capability to your Laravel 5 project.
+This package adds some basic import capability to your [Laravel 5](http://laravel.com/docs/5.1) project.
+
+At the moment this package contains the only command `import:delimited` which allows you to import delimited data (CSV, TSV, etc) into your local or remote database.
+
+#### Main features:
+
+- Supports multiple database connections (defined in [`config\database.php`](http://laravel.com/docs/5.1/database#introduction)).
+- You can use either a table name or Eloquent model class to import your data. By using Eloquent model you can benefit from [mutators and accessors](http://laravel.com/docs/5.1/eloquent-mutators).
+- Three import modes:
+  - insert
+  - update
+  - upsert
+- Row validation rules
+
 
 ## Installation
 
@@ -47,6 +60,116 @@ Options:
       --dry-run                  Dry run mode
       --no-progress              Don't show the progress bar
       --force                    Force the operation to run when in production
+```
+
+## Examples
+
+Lets say we have `employee.csv` file
+
+```text
+email,firstname,lastname,employed_on,phone
+john.doe@example.com,John,Doe,07/01/2014,2223334455
+jane.doe@example.com,Jane,Doe,02/15/2015,5554443322
+```
+
+table `employee` the migration for which may look like
+
+```php
+Schema::create('employees', function (Blueprint $table) {
+    $table->increments('id');
+    $table->string('email')->unique();
+    $table->string('firstname', 60)->nullable();
+    $table->string('lastname', 60)->nullable();
+    $table->string('phone', 10)->nullable();
+    $table->date('employed_on')->nullable();
+    $table->timestamps();
+});
+
+```
+
+and model `\App\Employee`
+
+```php
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Employee extends Model
+{
+    protected $table = 'employees';
+
+    protected $fillable = [
+        'email',
+        'firstname',
+        'lastname',
+        'phone',
+        'employed_on'
+    ];
+}
+```
+
+#### Insert
+
+If `employees` table is empty and you'd like to populate it
+
+```bash
+$ php artisan import:delimited employee.csv "\App\Employee" -f email:0,firstname:1,lastname:2,phone:4,employed_on:3 -m insert
+```
+
+Note: *The buity of using Eloquent model in this case is that timestamps `created_at` and `updated_at` will be populated by Eloquent automatically.*
+
+#### Upsert
+
+Now let's assume John's record is already present in the table. In order to update Jon's record and insert Jane's one you'd need to cnahge the mode and specify key field(s).
+
+```bash
+$ php artisan import:delimited employee.csv "\App\Employee" -f email:0,firstname:1,lastname:2,phone:4,employed_on:3 -m upsert -k email
+```
+
+#### Update
+
+If you want to just update phone numbers for existing records
+
+```bash
+$ php artisan import:delimited employee.csv "\App\Employee" -f email:0,phone:4 -m update -k email
+```
+
+### Field definition file
+
+Each field definition goes on a separate line in the format
+
+`<fieldname>[:position]`
+
+where `position` is an ordinal position of the field in the data file. The position is 0-based and can be omitted.
+
+#### Example `employee.fld`
+
+```text
+email:0
+firtname:1
+lastname:2
+phone:4
+employed_on:3
+```
+
+### Row validation rules file
+
+A row validation rule file is simply a php file that returns an array of rules. You can any of the [available Laravel validation rules](http://laravel.com/docs/5.1/validation#available-validation-rules)
+
+#### Example `employee.rule`
+
+```php
+<?php
+
+return [
+    'email' => 'required|email',
+    'firstname' => 'string|min:2|max:60',
+    'lastname' => 'string|min:2|max:60',
+    'phone' => 'digits:10|regex:/[2-9][0-9]{2}[2-9][0-9]{6}/'
+    'employed_on' => 'date_format:m/d/Y|after:2010-07-15|before:'.date('Y-m-d', strtotime('tomorrow'));
+];
 ```
 
 
