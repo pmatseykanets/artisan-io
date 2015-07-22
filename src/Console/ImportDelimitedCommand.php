@@ -189,8 +189,9 @@ class ImportDelimitedCommand extends Command
         $this->filePath = $this->validateFile($this->argument('from'));
 
         // DB connection
-        $this->connectionName = $this->option('database');
-        $this->setDefaultConnection();
+        if ($this->connectionName = $this->option('database')) {
+            $this->setDefaultConnection($this->connectionName);
+        }
 
         // Are we going to use transactions?
         $this->useTransaction = $this->option('transaction') ?: false;
@@ -240,7 +241,7 @@ class ImportDelimitedCommand extends Command
         // Key fields
         // TODO: Validate key fields. Take into consideration that key fields can be non fillable
         $this->keyFields = empty($this->option('key')) ?
-            $this->fields : array_map('trim', explode(',', $this->option('key')));
+            array_keys($this->fields) : array_map('trim', explode(',', $this->option('key')));
 
         // Are we going to display the progress bar?
         $this->showProgress = ! $this->option('no-progress');
@@ -264,18 +265,14 @@ class ImportDelimitedCommand extends Command
     }
 
     /**
-     * Returns array with column names and values that constitues a key (not necessarily a Primary Key)
+     * Returns an array of column names and values that constitues a key (not necessarily a Primary Key)
      *
      * @param $row
      * @return mixed
      */
     protected function getKey($row)
     {
-        foreach ($this->keyFields as $index => $column) {
-            $result[$column] = $row[$column];
-        }
-
-        return $result;
+        return array_intersect_key($row, array_flip($this->keyFields));
     }
 
     /**
@@ -522,19 +519,20 @@ class ImportDelimitedCommand extends Command
     }
 
     /**
-     * Returns named DB connection
+     * Changes the default connection name
+     * and tries to establish a connection
      */
-    private function setDefaultConnection()
+    protected function setDefaultConnection($database)
     {
         try {
             // Explicitely set the default connection name
-            Config::set('database.default', $this->connectionName);
+            Config::set('database.default', $database);
             // Try to connect
             $connection = DB::connection();
             // Close the connection
             $connection = null;
         } catch (\Exception $e) {
-            $this->abort($e->getMessage());
+            $this->abort("Can't establish a db connection '".$e->getMessage()."'.");
         }
     }
 
@@ -651,7 +649,7 @@ class ImportDelimitedCommand extends Command
             if (Str::contains($field, ':')) {
                 list($field, $position) = array_map('trim', explode(':', $field));
                 if (false === ($position = filter_var($position, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]))) {
-                    $this->abort("Invalid position for the field '$field'");
+                    $this->abort("Invalid position for the field '$field'.");
                 }
                 $positions[$field] = $position;
             }
