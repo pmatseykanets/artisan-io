@@ -88,8 +88,9 @@ class ImportDelimitedCommand extends Command
      */
     public function handle()
     {
-        if (! $this->confirmToProceed()) {
-            exit(1);
+        
+        if (!$this->confirmToProceed()) {
+            return;
         }
 
         $this->parseArguments();
