@@ -93,9 +93,19 @@ class ImportDelimitedCommand extends Command
             return;
         }
 
-        $this->parseArguments();
+        try {
+            
+            $this->parseArguments();
 
-        $this->runImport();
+            $this->runImport();    
+
+        } catch (ImportDelimitedException $e) {
+
+            throw new \RuntimeException($e->getMessage());
+            
+        }
+        
+        return;
 
     }
 
@@ -560,13 +570,12 @@ class ImportDelimitedCommand extends Command
      */
     protected function abort($message, $code = 1)
     {
-        $this->comment("Error(L{$this->fileLine}): $message");
 
         if ($this->imported > 0) {
             $this->reportImported();
         }
 
-        exit($code);
+        throw new ImportDelimitedException($message, $code);
     }
 
     /**
