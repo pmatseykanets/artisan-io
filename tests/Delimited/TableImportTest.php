@@ -111,11 +111,11 @@ class TableImportTest extends BaseTest
         // update() should be called for each record
         // SQL will take care of non matching key
         $db->shouldReceive('table')->with('table')->andReturnSelf()->getMock()
-            ->shouldReceive('where')->with(['foo' => 1])->andReturnSelf()->getMock()
+            ->shouldReceive('where')->with(['foo'  => 1])->andReturnSelf()->getMock()
             ->shouldReceive('update')->with(['foo' => 1, 'bar' => 'bar 1']);
 
         $db->shouldReceive('table')->with('table')->andReturnSelf()->getMock()
-            ->shouldReceive('where')->with(['foo' => 2])->andReturnSelf()->getMock()
+            ->shouldReceive('where')->with(['foo'  => 2])->andReturnSelf()->getMock()
             ->shouldReceive('update')->with(['foo' => 2, 'bar' => 'bar2']);
 
         $this->runImport($db, BaseImport::MODE_UPDATE, 'foo');
@@ -142,7 +142,7 @@ class TableImportTest extends BaseTest
             ->shouldReceive('first')->andReturnNull();
 
         $db->shouldReceive('table')->with('table')->andReturnSelf()->getMock()
-            ->shouldReceive('where')->with(['foo' => 1])->andReturnSelf()->getMock()
+            ->shouldReceive('where')->with(['foo'  => 1])->andReturnSelf()->getMock()
             ->shouldReceive('update')->with(['foo' => 1, 'bar' => 'bar 1']);
 
         //
@@ -157,6 +157,7 @@ class TableImportTest extends BaseTest
      *
      * @param $table
      * @param string|array $fields
+     *
      * @return m\MockInterface|\Yay_MockObject
      */
     private function getMockDb($table, $fields)
