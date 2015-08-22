@@ -56,7 +56,7 @@ class ImportDelimitedCommand extends Command
     public function handle()
     {
         if (!$this->confirmToProceed()) {
-            exit(1);
+            return;
         }
 
         try {
@@ -86,8 +86,6 @@ class ImportDelimitedCommand extends Command
         }
 
         $this->reportImported();
-
-        return 0;
     }
 
     /**
@@ -158,6 +156,7 @@ class ImportDelimitedCommand extends Command
 
     /**
      * Displays the number of imported records.
+     *
      */
     protected function reportImported()
     {
@@ -165,8 +164,8 @@ class ImportDelimitedCommand extends Command
             return;
         }
 
-        $message = "<info>Imported {$this->import->getImportedCount()} record(s) in ".
-            $this->renderElapsedTime($this->import->getExecutionTime()).'</info>';
+        $message = "<info>Processed {$this->import->getImportedCount()} row(s) in ".
+            $this->renderElapsedTime($this->import->getExecutionTime()).'.</info>';
 
         if ($this->import->isDryRun()) {
             $message = '<comment>Dry run: </comment>'.$message;
@@ -188,14 +187,14 @@ class ImportDelimitedCommand extends Command
         }
 
         if (!is_null($this->import)) {
-            $this->comment("Error(L{$this->import->getCurrentFileLine()}): $message");
+            $this->reportImported();
 
-            if ($this->import->getImportedCount() > 0) {
-                $this->reportImported();
+            if ($lastLine = $this->import->getCurrentFileLine()) {
+                $this->info("Last attempted line: $lastLine.");
             }
         }
 
-        exit($code);
+        throw new \RuntimeException($message, $code);
     }
 
     /**
