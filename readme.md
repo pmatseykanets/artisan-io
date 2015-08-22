@@ -44,17 +44,18 @@ Usage:
   import:delimited [options] [--] <from> <to>
 
 Arguments:
-  from                           The path to an import file i.e. /tmp/import.csv
-  to                             The table (i.e. employees) or Eloquent class name (i.e. "\App\Models\Employee")
+  from                           The path to an import file i.e. storage/import.csv
+  to                             The table or Eloquent model class name
 
 Options:
-  -f, --fields[=FIELDS]          A comma separated list of fields in the form <field>[:position] i.e. "email:0,name,2". Positions are 0 based
-  -F, --field-file[=FIELD-FILE]  Path to a file that contains field definitions. One field definition per line
-  -m, --mode[=MODE]              Import mode [insert|update|upsert] [default: "upsert"]
-  -k, --key[=KEY]                Field names separated by a comma that constitute a key for update and upsert modes
-  -R, --rule-file[=RULE-FILE]    Path to a file, containing field validation rules
+  -f, --fields[=FIELDS]          A comma separated list of field definitions in a form <field>[:position] i.e. "email:0,name,2". Positions are 0 based
+  -F, --field-file[=FIELD-FILE]  Path to a file that contains field definitions. One definition per line
+  -m, --mode[=MODE]              Import mode [insert|insert-new|update|upsert] [default: "upsert"]
+  -k, --key[=KEY]                Field names separated by a comma that constitute a key for update, upsert and insert-new modes
+  -R, --rule-file[=RULE-FILE]    Path to a file that contains field validation rules
   -d, --delimiter[=DELIMITER]    Field delimiter [default: ","]
   -i, --ignore[=IGNORE]          Ignore first N lines of the file
+  -t, --take[=TAKE]              Take only M lines
   -c, --database[=DATABASE]      The database connection to use
   -x, --transaction              Use a transaction
       --dry-run                  Dry run mode
