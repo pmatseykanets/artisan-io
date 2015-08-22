@@ -1,6 +1,6 @@
 <?php
 
-namespace ArtisanIo\Import\Delimited;
+namespace ArtisanIo\Delimited;
 
 use Mockery as m;
 use Illuminate\Database\Eloquent\Model;
@@ -52,9 +52,12 @@ class ModelImportTest extends BaseTest
         $model->shouldReceive('create')->once()
             ->with(['foo' => 2, 'bar' => 'bar2']);
 
-        $this->runImport($model, Import::MODE_INSERT);
+        $this->runImport($model, BaseImport::MODE_INSERT);
     }
 
+    /**
+     * @depends testItSetsModelName
+     */
     public function testItInsertsNew()
     {
         $model = m::mock(TestModel::class);
@@ -81,9 +84,12 @@ class ModelImportTest extends BaseTest
             ->with(['foo' => 2])
             ->andReturn($foo2);
 
-        $this->runImport($model, Import::MODE_INSERT_NEW);
+        $this->runImport($model, BaseImport::MODE_INSERT_NEW);
     }
 
+    /**
+     * @depends testItSetsModelName
+     */
     public function testItUpdates()
     {
         $foo1 = m::mock(FooModel::class);
@@ -99,9 +105,12 @@ class ModelImportTest extends BaseTest
             ->shouldReceive('get')
             ->andReturn([$foo1], []);
 
-        $this->runImport($model, Import::MODE_UPDATE);
+        $this->runImport($model, BaseImport::MODE_UPDATE);
     }
 
+    /**
+     * @depends testItSetsModelName
+     */
     public function testItUpserts()
     {
         $foo1 = m::mock(FooModel::class);
@@ -120,10 +129,12 @@ class ModelImportTest extends BaseTest
         $model->shouldReceive('create')->once()
             ->with(['foo' => 2, 'bar' => 'bar2']);
 
-        $this->runImport($model, Import::MODE_UPSERT);
+        $this->runImport($model, BaseImport::MODE_UPSERT);
     }
 
     /**
+     * Helper method.
+     *
      * @param $model
      * @param $mode
      */

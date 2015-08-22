@@ -1,6 +1,6 @@
 <?php
 
-namespace ArtisanIo\Import\Delimited;
+namespace ArtisanIo\Delimited;
 
 use Mockery as m;
 
@@ -69,7 +69,7 @@ class TableImportTest extends BaseTest
         $db->shouldReceive('table->insert')->once()->with(['foo' => 1, 'bar' => 'bar 1']);
         $db->shouldReceive('table->insert')->once()->with(['foo' => 2, 'bar' => 'bar2']);
 
-        $this->runImport($db, Import::MODE_INSERT);
+        $this->runImport($db, BaseImport::MODE_INSERT);
     }
 
     /**
@@ -98,7 +98,7 @@ class TableImportTest extends BaseTest
         $db->shouldNotReceive('table')->with('table')->andReturnSelf()->getMock()
             ->shouldNotReceive('insert')->with(['foo' => 1, 'bar' => 'bar 1']);
 
-        $this->runImport($db, Import::MODE_INSERT_NEW, 'foo');
+        $this->runImport($db, BaseImport::MODE_INSERT_NEW, 'foo');
     }
 
     /**
@@ -118,7 +118,7 @@ class TableImportTest extends BaseTest
             ->shouldReceive('where')->with(['foo' => 2])->andReturnSelf()->getMock()
             ->shouldReceive('update')->with(['foo' => 2, 'bar' => 'bar2']);
 
-        $this->runImport($db, Import::MODE_UPDATE, 'foo');
+        $this->runImport($db, BaseImport::MODE_UPDATE, 'foo');
     }
 
     /**
@@ -149,13 +149,14 @@ class TableImportTest extends BaseTest
         $db->shouldReceive('table')->with('table')->andReturnSelf()->getMock()
             ->shouldReceive('insert')->with(['foo' => 2, 'bar' => 'bar2']);
 
-        $this->runImport($db, Import::MODE_UPSERT, 'foo');
+        $this->runImport($db, BaseImport::MODE_UPSERT, 'foo');
     }
 
     /**
+     * He[per method.
+     *
      * @param $table
      * @param string|array $fields
-     *
      * @return m\MockInterface|\Yay_MockObject
      */
     private function getMockDb($table, $fields)
@@ -171,6 +172,8 @@ class TableImportTest extends BaseTest
     }
 
     /**
+     * Helper method.
+     *
      * @param $db
      * @param $mode
      * @param null $keyFields
