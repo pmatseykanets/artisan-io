@@ -2,8 +2,8 @@
 
 namespace ArtisanIo\Delimited;
 
-use Mockery as m;
 use ArtisanIo\TestCase;
+use Mockery as m;
 
 abstract class BaseTest extends TestCase
 {

@@ -2,8 +2,8 @@
 
 namespace ArtisanIo\Delimited;
 
-use Mockery as m;
 use Illuminate\Database\Eloquent\Model;
+use Mockery as m;
 
 class ModelImportTest extends BaseTest
 {
