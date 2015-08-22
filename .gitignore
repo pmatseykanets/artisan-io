@@ -1,2 +1,5 @@
-.idea
+composer.lock
 vendor
+.idea
+.DS_Store
+Thumbs.db
