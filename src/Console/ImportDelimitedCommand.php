@@ -156,7 +156,6 @@ class ImportDelimitedCommand extends Command
 
     /**
      * Displays the number of imported records.
-     *
      */
     protected function reportImported()
     {
