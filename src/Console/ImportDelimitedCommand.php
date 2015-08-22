@@ -2,25 +2,16 @@
 
 namespace ArtisanIo\Console;
 
-use Illuminate\Console\Command;
-use Illuminate\Console\ConfirmableTrait;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Console\Command;
+use ArtisanIo\Delimited\BaseImport;
+use ArtisanIo\Delimited\TableImport;
+use ArtisanIo\Delimited\ModelImport;
+use Illuminate\Console\ConfirmableTrait;
 
 class ImportDelimitedCommand extends Command
 {
     use ConfirmableTrait;
-
-    const MODE_INSERT = 'insert';
-    const MODE_UPDATE = 'update';
-    const MODE_UPSERT = 'upsert';
-
-    const TO_TABLE = 'table';
-    const TO_MODEL = 'model';
 
     /**
      * The name and signature of the console command.
@@ -28,15 +19,16 @@ class ImportDelimitedCommand extends Command
      * @var string
      */
     protected $signature = 'import:delimited
-        {from            : The path to an import file i.e. /tmp/import.csv}
-        {to              : The table or Eloquent class name}
-        {--f|fields=     : A comma separated list of fields in a form <field>[:position] i.e. "email:0,name,2". Positions are 0 based}
+        {from            : The path to an import file i.e. storage/import.csv}
+        {to              : The table or Eloquent model class name}
+        {--f|fields=     : A comma separated list of field definitions in a form <field>[:position] i.e. "email:0,name,2". Positions are 0 based}
         {--F|field-file= : Path to a file that contains field definitions. One definition per line}
-        {--m|mode=upsert : Import mode [insert|update|upsert]}
-        {--k|key=        : Field names separated by a comma that constitute a key for update and upsert modes}
-        {--R|rule-file=  : Path to a file, containing field validation rules}
+        {--m|mode=upsert : Import mode [insert|insert-new|update|upsert]}
+        {--k|key=        : Field names separated by a comma that constitute a key for update, upsert and insert-new modes}
+        {--R|rule-file=  : Path to a file that contains field validation rules}
         {--d|delimiter=, : Field delimiter}
         {--i|ignore=     : Ignore first N lines of the file}
+        {--t|take=       : Take only M lines}
         {--c|database=   : The database connection to use}
         {--x|transaction : Use a transaction}
         {--dry-run       : Dry run mode}
@@ -48,38 +40,13 @@ class ImportDelimitedCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Import data from a file using table name or Eloquent model.';
+    protected $description = 'Import data from a delimited file using a table or Eloquent model.';
 
-    protected $filePath;
-    protected $table;
-    protected $model;
-    protected $connectionName;
-    protected $useTransaction;
-    protected $mode;
-    protected $fields;
-//    protected $fieldCasts;
-    protected $keyFields;
-    protected $delimiter;
-    protected $ignore;
-    protected $rules = [];
-    protected $dryRun = false;
-
-    // Statistics
-    protected $startedAt;
-    protected $imported = 0;
-    protected $fileLine = 0;
-
-    // Other
     protected $showProgress = true;
+    protected $lastProgressValue = 0;
 
-    /**
-     * Create a new command instance.
-     *
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
+    /** @var \ArtisanIo\ImportDelimited */
+    protected $import;
 
     /**
      * Execute the console command.
@@ -88,522 +55,174 @@ class ImportDelimitedCommand extends Command
      */
     public function handle()
     {
-        if (! $this->confirmToProceed()) {
+        if (!$this->confirmToProceed()) {
             exit(1);
         }
 
-        $this->parseArguments();
+        try {
+            $this->parseArguments();
 
-        $this->runImport();
-
-    }
-
-    /**
-     * Permorm the import
-     */
-    protected function runImport()
-    {
-        $this->startedAt = microtime(true);
-
-        $fileIterator = $this->getFileIterator();
-
-        $this->imported = 0;
-
-        $rules = $this->getRowValidationRules();
-
-        if ($this->showProgress) {
-            $this->output->progressStart();
-        }
-
-        if ($this->useTransaction) {
-            DB::beginTransaction();
-        }
-
-        foreach ($fileIterator as $values) {
-            $this->fileLine = $fileIterator->key() + 1;
-
-            $row = $this->mapValues($values, $this->fields);
-
-            if (! empty($rules)) {
-                $this->validateRow($row, $rules, $this->fileLine);
-            }
-
-            switch ($this->mode) {
-                case self::MODE_INSERT:
-                    $this->insert($row);
-                    break;
-                case self::MODE_UPDATE:
-                    $this->update($row);
-                    break;
-                default: //self::MODE_UPSERT
-                    $this->upsert($row);
-            }
-
-            $this->imported++;
-
-            if ($this->showProgress) {
-                $this->output->progressAdvance();
-            }
-        }
-
-        if ($this->useTransaction) {
-            DB::commit();
-        }
-
-        $fileIterator = null;
-
-        if ($this->showProgress) {
-            //$this->output->progressFinish();
-            $this->progressRemove();
+            $this->import
+                ->setBeforeHandler(function () {
+                    if ($this->showProgress) {
+                        $this->output->progressStart($this->getProgressMaxValue());
+                    }
+                })
+                ->setImportedHandler(function () {
+                    if ($this->showProgress) {
+                        $currentValue = $this->getProgressCurrentValue();
+                        $this->output->progressAdvance($currentValue - $this->lastProgressValue);
+                        $this->lastProgressValue = $currentValue;
+                    }
+                })
+                ->setAfterHandler(function () {
+                    if ($this->showProgress) {
+                        $this->progressRemove();
+                    }
+                })
+                ->import();
+        } catch (\Exception $e) {
+            $this->abort($e->getMessage());
         }
 
         $this->reportImported();
+
+        return 0;
     }
 
     /**
-     * Turns an array of read values into an associative array where keys are column/attribute names
-     *
-     * @param array $values
-     * @param array $columns
-     * @return array
-     */
-    protected function mapValues($values, $columns)
-    {
-        $mapped = [];
-        foreach ($columns as $column => $position) {
-            if ($position > count($values)) {
-                $this->abort("Position '$position' is out of scope for field '$column'.");
-            }
-            $mapped[$column] = trim($values[$position]);
-        }
-
-        return $mapped;
-    }
-
-    /**
-     * Parse input arguments
+     * Parse input arguments.
      */
     protected function parseArguments()
     {
-        // Import file
-        $this->filePath = $this->validateFile($this->argument('from'));
+        $targetName = trim($this->argument('to'));
+
+        // Instanciate a proper importer depending on the import target (table or model)
+        // If target name starts with a slash '\' then we consider it a model otherwise a table
+        if (Str::startsWith($targetName, '\\')) {
+            $this->import = app()->make(ModelImport::class);
+        } else {
+            $this->import = app()->make(TableImport::class);
+        }
+
+        $this->import->setImportFile(trim($this->argument('from')));
 
         // DB connection
-        if ($this->connectionName = $this->option('database')) {
-            $this->setDefaultConnection($this->connectionName);
+        if ($this->option('database')) {
+            $this->import->setConnectionName($this->option('database'));
         }
 
         // Are we going to use transactions?
-        $this->useTransaction = $this->option('transaction') ?: false;
+        $this->import->setUseTransaction($this->option('transaction') ?: false);
 
-        $to = trim($this->argument('to'));
-        if (Str::startsWith($to, '\\')) {
-            if (! $this->model = $this->modelExists($to)) {
-                $this->abort("Model '$to' doesn't exist.");
-            }
-        } else {
-            if (! $this->table = $this->tableExists($to)) {
-                $this->abort("Table '$to' doesn't exist.");
-            }
-        }
+        // After we set up the connection we can finally set the target
+        $this->import->setTargetName($targetName);
 
         // Import mode
-        $this->mode = strtolower($this->option('mode') ?: self::MODE_UPSERT);
-        if (! in_array($this->mode, [self::MODE_UPSERT, self::MODE_UPDATE, self::MODE_INSERT])) {
-            $this->abort("Invalid mode '{$this->mode}'.");
-        }
+        $this->import->setMode($this->option('mode') ?: BaseImport::MODE_UPSERT);
 
-        // Import fields
+        // Import field definitions
         if (empty($this->option('fields')) && empty($this->option('field-file'))) {
-            $this->abort("Import fields haven't been specified. Use -f or -F option.");
-        }
-        if (! $fieldDefinitions = $this->getFieldDefinitions()) {
-            $this->abort("Invalid field definition.");
-        }
-        $this->parseFields($fieldDefinitions);
-        $this->validateFields();
-
-        // Row validation rules file
-        if ($this->option('rule-file')) {
-            $ruleFilePath = $this->validateFile($this->option('rule-file'), 'Rule file');
-            // TODO: Validate rule file
-            $this->rules = @require $ruleFilePath;
+            throw new \RuntimeException("Import fields haven't been specified. Use -f or -F option.");
         }
 
-        // Fields delimiter
-        $this->delimiter = $this->unescape($this->option('delimiter') ?: ',');
+        // Read validate and assign field definitions
+        if ($this->option('fields')) {
+            $this->import->setFields($this->option('fields'));
+        }
 
-        // Ignore N lines
-        if (false === ($this->ignore = filter_var($this->option('ignore'), FILTER_VALIDATE_INT, ['options' => ['default' => 0, 'min_range' => 0]]))) {
-            $this->abort("--ignore value should be a positive integer");
+        if ($this->option('field-file')) {
+            $this->import->setFieldsFromFile($this->option('field-file'));
         }
 
         // Key fields
-        // TODO: Validate key fields. Take into consideration that key fields can be non fillable
-        $this->keyFields = empty($this->option('key')) ?
-            array_keys($this->fields) : array_map('trim', explode(',', $this->option('key')));
+        $this->import->setKeyFields($this->option('key'));
+
+        // Row validation rules file
+        if ($this->option('rule-file')) {
+            $this->import->setValidationRulesFromFile($this->option('rule-file'));
+        }
+
+        $this->import
+            ->setDelimiter($this->unescape($this->option('delimiter') ?: ','))
+            ->setIgnoreLines($this->option('ignore'))
+            ->setDryRun($this->option('dry-run'));
+
+        if ($this->option('take')) {
+            $this->import->setTakeLines($this->option('take'));
+        }
 
         // Are we going to display the progress bar?
-        $this->showProgress = ! $this->option('no-progress');
-
-        // Are we in a Dry Run mode?
-        $this->dryRun = $this->option('dry-run');
+        $this->showProgress = !$this->option('no-progress');
     }
 
     /**
-     * Return file iterator
-     *
-     * @return \LimitIterator
-     */
-    protected function getFileIterator()
-    {
-        $file = new \SplFileObject($this->filePath, 'r');
-        $file->setFlags(\SplFileObject::READ_AHEAD | \SplFileObject::SKIP_EMPTY | \SplFileObject::DROP_NEW_LINE | \SplFileObject::READ_CSV);
-        $file->setCsvControl($this->delimiter);
-
-        return new \LimitIterator($file, $this->ignore);
-    }
-
-    /**
-     * Returns an array of column names and values that constitues a key (not necessarily a Primary Key)
-     *
-     * @param $row
-     * @return mixed
-     */
-    protected function getKey($row)
-    {
-        return array_intersect_key($row, array_flip($this->keyFields));
-    }
-
-    /**
-     * Validates values of row against given set of rules
-     *
-     * @param $row
-     * @param $rules
-     * @param $line
-     */
-    protected function validateRow($row, $rules, $line)
-    {
-        $validator = Validator::make($row, $rules);
-
-        if ($validator->fails()) {
-            $this->abort(implode(' ', $validator->errors()->all()));
-        }
-    }
-
-    /**
-     * Checks whether the table exists
-     *
-     * @param string $table
-     * @return bool
-     */
-    protected function tableExists($table)
-    {
-        if (Schema::hasTable($table)) {
-            return $table;
-        }
-
-        return null;
-    }
-
-    /**
-     * Checks whether a model class exists and is an instance of Illuminate\Database\Eloquent\Model
-     *
-     * @param string $abstract
-     * @return null|\Illuminate\Database\Eloquent\Model
-     */
-    protected function modelExists($abstract)
-    {
-        try {
-            $instance = app($abstract);
-        } catch (\Exception $e) {
-            return null;
-        }
-
-        return $instance instanceof Model ? $instance : null;
-    }
-
-    /**
-     * Are we using a table?
-     *
-     * @return bool
-     */
-    protected function isTable()
-    {
-        return ! empty($this->table);
-    }
-
-    /**
-     * Are we using an Eloquent model?
-     *
-     * @return bool
-     */
-    protected function isModel()
-    {
-        return ! $this->isTable();
-    }
-
-    /**
-     * Validates field names
-     */
-    protected function validateFields()
-    {
-        foreach (array_keys($this->fields) as $field) {
-            if ($this->isTable()) {
-                if (! Schema::hasColumn($this->table, $field)) {
-                    $this->abort("Column '$field' doesn't exist.");
-                }
-            } else { // isModel
-                if (! in_array($field, $this->model->getFillable()) || in_array($field, $this->model->getGuarded())) {
-                    $this->abort("Attribute '$field' doesn't exist or is not fillable.");
-                }
-            }
-        }
-    }
-
-    /**
-     * Returns row validation rules
-     * Takes into account that in UPDATE mode we don't neeed full set of rules
-     *
-     * @return null|array
-     */
-    protected function getRowValidationRules()
-    {
-        if (empty($this->rules)) {
-            return;
-        }
-
-        if (self::MODE_UPDATE == $this->mode) {
-            return array_intersect_key($this->rules, array_flip($this->fields));
-        }
-
-        return $this->rules;
-    }
-
-    /**
-     * Performs UPSERT
-     *
-     * @param $row
-     */
-    protected function upsert($row)
-    {
-        $key = $this->getKey($row);
-
-        if ($this->dryRun) {
-            return;
-        }
-
-        if ($this->isTable()) {
-            $this->tableUpsert($row, $key);
-        } else {
-            $this->modelUpsert($row);
-        }
-    }
-
-    /**
-     * Performs UPDATE
-     *
-     * @param $row
-     */
-    protected function update($row)
-    {
-        $key = $this->getKey($row);
-
-        if ($this->dryRun) {
-            return;
-        }
-
-        if ($this->isTable()) {
-            $this->tableUpdate($row, $key);
-        } else {
-            $this->modelUpdate($row, $key);
-        }
-    }
-
-    /**
-     * Performs INSERT
-     *
-     * @param $row
-     */
-    protected function insert($row)
-    {
-        if ($this->dryRun) {
-            return;
-        }
-
-        if ($this->isTable()) {
-            $this->tableInsert($row);
-        } else {
-            $this->modelInsert($row);
-        }
-    }
-
-    /**
-     * Inserts a row into the table
-     *
-     * @param $row
-     */
-    protected function tableInsert($row)
-    {
-        DB::table($this->table)
-            ->insert($row);
-    }
-
-    /**
-     * Updates row(s) in the table
-     *
-     * @param $row
-     * @param $key
-     */
-    protected function tableUpdate($row, $key)
-    {
-        DB::table($this->table)
-            ->where($key)
-            ->update($row);
-    }
-
-    /**
-     * Upserts row(s) in the table
-     *
-     * @param $row
-     * @param $key
-     */
-    protected function tableUpsert($row, $key)
-    {
-        $record = DB::table($this->table)
-            ->select(DB::raw('1'))
-            ->where($key)
-            ->take(1)
-            ->first();
-
-        if (is_null($record)) {
-            $this->tableInsert($row);
-        } else {
-            $this->tableUpdate($row, $key);
-        }
-    }
-
-    /**
-     * Inserts a row using the model
-     *
-     * @param $row
-     */
-    protected function modelInsert($row)
-    {
-        $record = $this->model
-            ->create($row);
-    }
-
-    /**
-     * Updates row(s) using the model
-     *
-     * @param $row
-     * @param $key
-     */
-    protected function modelUpdate($row, $key)
-    {
-        $this->model
-            ->where($key)
-            ->update($row);
-    }
-
-    /**
-     * Upserts row(s) using the model
-     *
-     * @param $row
-     */
-    protected function modelUpsert($row)
-    {
-        $record = $this->model
-            ->updateOrCreate($this->getKey($row), $row);
-    }
-
-    /**
-     * Changes the default connection name
-     * and tries to establish a connection
-     */
-    protected function setDefaultConnection($database)
-    {
-        try {
-            // Explicitely set the default connection name
-            Config::set('database.default', $database);
-            // Try to connect
-            $connection = DB::connection();
-            // Close the connection
-            $connection = null;
-        } catch (\Exception $e) {
-            $this->abort("Can't establish a db connection '".$e->getMessage()."'.");
-        }
-    }
-
-    /**
-     * Displays the number of imported records
+     * Displays the number of imported records.
      */
     protected function reportImported()
     {
-        $message = "<info>Imported {$this->imported} record(s) in " .
-            $this->renderElapsedTime($this->startedAt) . '</info>';
+        if (!$this->import) {
+            return;
+        }
 
-        if ($this->dryRun) {
-            $message = '<comment>Dry run: </comment>' . $message;
+        $message = "<info>Imported {$this->import->getImportedCount()} record(s) in ".
+            $this->renderElapsedTime($this->import->getExecutionTime()).'</info>';
+
+        if ($this->import->isDryRun()) {
+            $message = '<comment>Dry run: </comment>'.$message;
         }
 
         $this->output->writeln($message);
     }
 
     /**
-     * Displays the message and exit
+     * Displays the message and exits.
      *
      * @param $message
      * @param int $code
      */
     protected function abort($message, $code = 1)
     {
-        $this->comment("Error(L{$this->fileLine}): $message");
+        if ($this->showProgress) {
+            $this->progressRemove();
+        }
 
-        if ($this->imported > 0) {
-            $this->reportImported();
+        if (!is_null($this->import)) {
+            $this->comment("Error(L{$this->import->getCurrentFileLine()}): $message");
+
+            if ($this->import->getImportedCount() > 0) {
+                $this->reportImported();
+            }
         }
 
         exit($code);
     }
 
     /**
-     * Render elapsed time in a more human readable way
+     * Render elapsed time in a more human readable way.
      *
-     * @param $start
+     * @param $milliseconds
+     *
      * @return string
      */
-    protected function renderElapsedTime($start)
+    protected function renderElapsedTime($milliseconds)
     {
-        $elapsed = (microtime(true) - $start) * 1000;
-
-        if ($elapsed < 1000) {
-            return round($elapsed, 2).'ms';
+        if ($milliseconds < 1000) {
+            return round($milliseconds, 2).'ms';
         }
 
-        if ($elapsed >= 1000 && $elapsed < 60000) {
-            return round($elapsed / 1000, 2).'s';
+        if ($milliseconds >= 1000 && $milliseconds < 60000) {
+            return round($milliseconds / 1000, 2).'s';
         }
 
-        return round($elapsed / 60000, 2).'min';
+        return round($milliseconds / 60000, 2).'min';
     }
 
     /**
-     * Get the elapsed time since a given starting point.
-     *
-     * @param  int    $start
-     * @return float
-     */
-    protected function getElapsedTime($start)
-    {
-        return round((microtime(true) - $start) * 1000, 2);
-    }
-
-    /**
-     * Interpret escape characters
+     * Interpret escape characters.
      *
      * @param $value
+     *
      * @return mixed
      */
     protected function unescape($value)
@@ -618,74 +237,40 @@ class ImportDelimitedCommand extends Command
     }
 
     /**
-     * Gets field definitions either from arguments or file
-     *
-     * @return array
-     */
-    protected function getFieldDefinitions()
-    {
-        if ($this->option('fields')) {
-            return array_map('trim', explode(',', $this->option('fields')));
-        }
-
-        if ($this->option('field-file')) {
-            $fieldFilePath = $this->validateFile($this->option('field-file'), 'Field file');
-            return array_map('trim', file($fieldFilePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
-        }
-
-        return null;
-    }
-
-    /**
-     * Parses field definitions
-     *
-     * @param $fieldDefinitions
-     */
-    protected function parseFields($fieldDefinitions)
-    {
-        $fields = [];
-        $positions = [];
-        foreach ($fieldDefinitions as $field) {
-            if (Str::contains($field, ':')) {
-                list($field, $position) = array_map('trim', explode(':', $field));
-                if (false === ($position = filter_var($position, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]))) {
-                    $this->abort("Invalid position for the field '$field'.");
-                }
-                $positions[$field] = $position;
-            }
-            $fields[] = $field;
-        }
-        $this->fields = array_merge(array_flip($fields), $positions);
-    }
-
-    /**
-     * Validates that the file exists is readable and is not empty
-     * and returns an absolute path to the file
-     *
-     * @param $filePath
-     * @param string $message
-     * @return string
-     */
-    protected function validateFile($filePath, $message = 'File')
-    {
-        if (! file_exists($filePath) || ! is_readable($filePath)) {
-            $this->abort("$message '{$filePath}' doesn't exist or is not readable.");
-        }
-
-        if (0 === filesize($filePath)) {
-            $this->abort("$message '{$filePath}' is empty.");
-        }
-
-        return realpath($filePath);
-    }
-
-    /**
-     * Removes the progress bar
+     * Removes the progress bar.
      */
     protected function progressRemove()
     {
         $this->output->write("\x0D");
         $this->output->write(str_repeat(' ', 60)); // Revisit this
         $this->output->write("\x0D");
+    }
+
+    /**
+     * Gets the max value for the progress bar off of import object.
+     *
+     * @return mixed
+     */
+    private function getProgressMaxValue()
+    {
+        if ($value = $this->import->getTakeLines()) {
+            return $value;
+        }
+
+        return $this->import->getImportFileSize();
+    }
+
+    /**
+     * Gets the current value for the progress bar off of import object.
+     *
+     * @return mixed
+     */
+    private function getProgressCurrentValue()
+    {
+        if ($this->import->getTakeLines()) {
+            return $this->import->getImportedCount();
+        }
+
+        return $this->import->getBytesRead();
     }
 }
