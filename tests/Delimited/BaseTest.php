@@ -9,10 +9,20 @@ abstract class BaseTest extends TestCase
 {
     protected $abstract;
 
-    protected $emptyFile = __DIR__.'/empty.file';
-    protected $importFile = __DIR__.'/import.csv';
-    protected $fieldFile = __DIR__.'/import.fields';
-    protected $rulesFile = __DIR__.'/import.rules';
+    protected $emptyFile;
+    protected $importFile;
+    protected $fieldFile;
+    protected $rulesFile;
+
+    public function setUp()
+    {
+        parent::setUp();
+
+        $this->emptyFile = __DIR__.'/empty.file';
+        $this->importFile = __DIR__.'/import.csv';
+        $this->fieldFile = __DIR__.'/import.fields';
+        $this->rulesFile = __DIR__.'/import.rules';
+    }
 
     public function tearDown()
     {
