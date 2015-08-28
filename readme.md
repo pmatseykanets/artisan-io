@@ -1,9 +1,9 @@
 # artisan-io
 
+[![Laravel 5.1](https://img.shields.io/badge/Laravel-5.1-orange.svg)](http://laravel.com)
 [![StyleCI](https://styleci.io/repos/39307509/shield)](https://styleci.io/repos/39307509)
 [![Build Status](https://travis-ci.org/pmatseykanets/artisan-io.svg)](https://travis-ci.org/pmatseykanets/artisan-io)
 [![Latest Stable Version](https://poser.pugx.org/pmatseykanets/artisan-io/v/stable)](https://packagist.org/packages/pmatseykanets/artisan-io)
-[![Latest Unstable Version](https://poser.pugx.org/pmatseykanets/artisan-io/v/unstable)](https://packagist.org/packages/pmatseykanets/artisan-io)
 [![License](https://poser.pugx.org/pmatseykanets/artisan-io/license)](https://packagist.org/packages/pmatseykanets/artisan-io)
 
 This package adds data import capability to your [Laravel 5](http://laravel.com/docs/5.1) project. It contains an artisan command `import:delimited` which allows you, as the name implies, to import delimited data (CSV, TSV, etc) into your local or remote database.
