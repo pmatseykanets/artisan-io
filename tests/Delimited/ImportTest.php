@@ -352,15 +352,19 @@ class CommonBaseImport extends BaseImport
     protected function upsert($row, $key)
     {
     }
+
     protected function update($row, $key)
     {
     }
+
     protected function insertNew($row, $key)
     {
     }
+
     protected function insert($row)
     {
     }
+
     protected function validateFields($fieldDefinitions)
     {
         return $fieldDefinitions;
