@@ -38,6 +38,15 @@ protected $commands = [
 ];
 ```
 
+### Installation in Lumen
+
+Follow the above steps and then open upp `app\Providers\AppServiceProvider.php` in the ditor of your choice and add the following to the register method:
+
+```php
+$this->app->bind('Symfony\Component\Translation\TranslatorInterface', function ($app) {
+    return $app['translator'];
+});
+```
 
 ## Usage
 
