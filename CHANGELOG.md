@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [1.0.0](https://github.com/pmatseykanets/artisan-io/releases/tag/v1.0.0) - 2017-09-05
+### Added
+- Added a service provider and Laravel 5.5 package auto discovery.
+
 ## [Unreleased](https://github.com/pmatseykanets/artisan-io/tree/HEAD)
 ### Added
 - Added CONTRIBUTING.md.
