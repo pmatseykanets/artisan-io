@@ -1,6 +1,6 @@
 {
     "name": "pmatseykanets/artisan-io",
-    "description": "Artisan data import command for Laravel 5 project",
+    "description": "Artisan data import command for Laravel",
     "keywords": ["laravel", "data", "import", "delimited", "csv", "tsv"],
     "license": "MIT",
     "authors": [
@@ -32,6 +32,13 @@
     "autoload-dev": {
         "psr-4": {
             "ArtisanIo\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "ArtisanIo\\ArtisanIoServiceProvider"
+            ]
         }
     }
 }
