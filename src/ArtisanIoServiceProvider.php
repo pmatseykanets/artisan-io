@@ -15,7 +15,7 @@ class ArtisanIoServiceProvider extends ServiceProvider
 
         $commands->each(function ($command, $abstract) {
             $this->app->singleton($abstract, function () use ($command) {
-                return new $command;
+                return new $command();
             });
         });
 
