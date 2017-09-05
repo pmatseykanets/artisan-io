@@ -22,13 +22,23 @@ This package adds data import capability to your [Laravel 5](http://laravel.com/
 
 ## Installation
 
-### Install through composer
+You can install the package via composer:
 
 ```bash
 $ composer require pmatseykanets/artisan-io
 ```
 
-### Register the command
+If you're using Laravel < 5.5 or if you have package auto-discovery turned off you have to manually register the service provider:
+
+```php
+// config/app.php
+'providers' => [
+    ...
+    ArtisanIo\ArtisanIoServiceProvider::class,
+],
+```
+
+Alternatively you can register the command yourself
 
 Open `app\Console\Kernel.php` in the editor of your choice and add the command to the `$commands` array
 
@@ -38,9 +48,7 @@ protected $commands = [
 ];
 ```
 
-
 ## Usage
-
 
 ```
 $ php artisan import:delimited --help
