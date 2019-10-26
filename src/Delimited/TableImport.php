@@ -27,7 +27,7 @@ class TableImport extends BaseImport
      */
     public function setTable($table)
     {
-        if (!$this->db->connection()->getSchemaBuilder()->hasTable($table)) {
+        if (! $this->db->connection()->getSchemaBuilder()->hasTable($table)) {
             throw new \RuntimeException("Table $table doesn't exist.");
         }
 
@@ -125,7 +125,7 @@ class TableImport extends BaseImport
     protected function validateFields($fieldDefinitions)
     {
         foreach ($fieldDefinitions as $field => $position) {
-            if (!$this->db->connection()->getSchemaBuilder()->hasColumn($this->table, $field)) {
+            if (! $this->db->connection()->getSchemaBuilder()->hasColumn($this->table, $field)) {
                 throw new \RuntimeException("Column '$field' doesn't exist.");
             }
         }

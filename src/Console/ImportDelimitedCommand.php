@@ -2,12 +2,12 @@
 
 namespace ArtisanIo\Console;
 
+use Illuminate\Support\Str;
+use Illuminate\Console\Command;
 use ArtisanIo\Delimited\BaseImport;
 use ArtisanIo\Delimited\ModelImport;
 use ArtisanIo\Delimited\TableImport;
-use Illuminate\Console\Command;
 use Illuminate\Console\ConfirmableTrait;
-use Illuminate\Support\Str;
 
 class ImportDelimitedCommand extends Command
 {
@@ -55,7 +55,7 @@ class ImportDelimitedCommand extends Command
      */
     public function handle()
     {
-        if (!$this->confirmToProceed()) {
+        if (! $this->confirmToProceed()) {
             return;
         }
 
@@ -151,7 +151,7 @@ class ImportDelimitedCommand extends Command
         }
 
         // Are we going to display the progress bar?
-        $this->showProgress = !$this->option('no-progress');
+        $this->showProgress = ! $this->option('no-progress');
     }
 
     /**
@@ -159,7 +159,7 @@ class ImportDelimitedCommand extends Command
      */
     protected function reportImported()
     {
-        if (!$this->import) {
+        if (! $this->import) {
             return;
         }
 
@@ -185,7 +185,7 @@ class ImportDelimitedCommand extends Command
             $this->progressRemove();
         }
 
-        if (!is_null($this->import)) {
+        if (! is_null($this->import)) {
             $this->reportImported();
 
             if ($lastLine = $this->import->getCurrentFileLine()) {

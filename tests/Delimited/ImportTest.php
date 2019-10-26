@@ -23,7 +23,7 @@ class ImportTest extends BaseTest
     {
         $import = $this->getInstance();
 
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
         $import->setImportFile('non_existing_file.csv');
     }
 
@@ -31,7 +31,7 @@ class ImportTest extends BaseTest
     {
         $import = $this->getInstance();
 
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
 
         file_put_contents($this->emptyFile, '');
 
@@ -62,7 +62,7 @@ class ImportTest extends BaseTest
 
         $import = $this->getInstance(['config' => $config, 'db' => $db]);
 
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
 
         $import->setConnectionName('none');
     }
@@ -97,7 +97,7 @@ class ImportTest extends BaseTest
     {
         $import = $this->getInstance();
 
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
 
         $import->setMode('invalid');
     }
@@ -202,7 +202,7 @@ class ImportTest extends BaseTest
     {
         $import = $this->getInstance();
 
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
 
         $import->setFields('');
     }
@@ -211,7 +211,7 @@ class ImportTest extends BaseTest
     {
         $import = $this->getInstance();
 
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
 
         $import->setFields(',,');
     }
@@ -220,7 +220,7 @@ class ImportTest extends BaseTest
     {
         $import = $this->getInstance();
 
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
 
         $import->setFieldsFromFile('none.fields');
     }
@@ -229,7 +229,7 @@ class ImportTest extends BaseTest
     {
         $import = $this->getInstance();
 
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
 
         $import->setFieldsFromFile($this->emptyFile);
     }
@@ -240,7 +240,7 @@ class ImportTest extends BaseTest
 
         file_put_contents($this->fieldFile, "\n\t\n    \n");
 
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
 
         $import->setFieldsFromFile($this->fieldFile);
     }

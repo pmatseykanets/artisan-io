@@ -26,7 +26,7 @@ class TableImportTest extends BaseTest
 
         $import = $this->getInstance(['db' => $db]);
 
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
 
         $import->setTargetName('none');
     }
@@ -38,7 +38,7 @@ class TableImportTest extends BaseTest
         $import = $this->getInstance(['db' => $db]);
         $import->setTargetName('table');
 
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
 
         $return = $import->setFields('foo,bar,baz');
     }
@@ -55,7 +55,7 @@ class TableImportTest extends BaseTest
 
         file_put_contents($this->fieldFile, "foo\nbar\nbaz");
 
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
 
         $return = $import->setFieldsFromFile($this->fieldFile);
     }
@@ -189,7 +189,7 @@ class TableImportTest extends BaseTest
             ->setTable('table')
             ->setFields('foo,bar');
 
-        if (!is_null($keyFields)) {
+        if (! is_null($keyFields)) {
             $import->setKeyFields($keyFields);
         }
 

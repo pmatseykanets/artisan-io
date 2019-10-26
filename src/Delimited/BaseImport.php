@@ -2,10 +2,10 @@
 
 namespace ArtisanIo\Delimited;
 
+use Illuminate\Support\Str;
 use Illuminate\Config\Repository as Config;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\DatabaseManager as DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Factory as Validator;
 
 abstract class BaseImport
@@ -80,7 +80,7 @@ abstract class BaseImport
             $row = $this->mapValues($values, $this->getFields());
             $key = $this->mapValues($values, $this->getKeyFields());
 
-            if (!empty($rules)) {
+            if (! empty($rules)) {
                 $this->validateRow($row, $rules);
             }
 
@@ -98,7 +98,7 @@ abstract class BaseImport
                     $this->upsert($row, $key);
             }
 
-            ++$this->imported;
+            $this->imported++;
 
             $this->callEventHandler($this->importedHandler);
         }
@@ -278,7 +278,7 @@ abstract class BaseImport
 
         foreach ($fieldDefinitions as $field) {
             if (Str::contains($field, ':')) {
-                list($field, $position) = array_map('trim', explode(':', $field));
+                [$field, $position] = array_map('trim', explode(':', $field));
 
                 if (false === ($position = filter_var($position, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]))) {
                     throw new \RuntimeException("Invalid position for the field '$field'.");
@@ -306,7 +306,7 @@ abstract class BaseImport
         foreach ($fieldDefinitions as $field) {
             // If an explicit position is given
             if (Str::contains($field, ':')) {
-                list($field, $position) = array_map('trim', explode(':', $field));
+                [$field, $position] = array_map('trim', explode(':', $field));
 
                 if (false === ($position = filter_var($position, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]))) {
                     throw new \RuntimeException("Invalid position for the field '$field'.");
@@ -316,7 +316,7 @@ abstract class BaseImport
                 continue;
             }
             // If not try to get from the corresponding import field
-            if (!isset($this->fields[$field])) {
+            if (! isset($this->fields[$field])) {
                 throw new \RuntimeException("Invalid definition for key field '$field'.");
             }
             $positions[$field] = $this->fields[$field];
@@ -463,7 +463,7 @@ abstract class BaseImport
 
         $rules = @require $filePath;
 
-        if (empty($rules) || !is_array($rules)) {
+        if (empty($rules) || ! is_array($rules)) {
             throw new \RuntimeException('Invalid rules file.');
         }
 
@@ -477,7 +477,7 @@ abstract class BaseImport
      */
     public function getKeyFields()
     {
-        if (!$this->keyFields) {
+        if (! $this->keyFields) {
             $this->keyFields = $this->fields;
         }
 
@@ -491,13 +491,13 @@ abstract class BaseImport
      */
     public function setKeyFields($value)
     {
-        if (!is_array($value)) {
+        if (! is_array($value)) {
             $fields = explode(',', $value);
         }
 
         $fields = array_filter(array_map('trim', $fields));
 
-        if (empty($fields) && !empty($value)) {
+        if (empty($fields) && ! empty($value)) {
             throw new \RuntimeException('Invalid key field definition');
         }
 
@@ -525,7 +525,7 @@ abstract class BaseImport
      */
     public function setFields($fields)
     {
-        if (!is_array($fields)) {
+        if (! is_array($fields)) {
             $fields = explode(',', $fields);
         }
 
@@ -568,7 +568,7 @@ abstract class BaseImport
     {
         $mode = strtolower(trim($mode));
 
-        if (!in_array($mode, [
+        if (! in_array($mode, [
             self::MODE_UPSERT,
             self::MODE_UPDATE,
             self::MODE_INSERT,
@@ -679,7 +679,7 @@ abstract class BaseImport
      */
     public function getCurrentFileLine()
     {
-        if (!$this->getFileIterator()) {
+        if (! $this->getFileIterator()) {
             return 0;
         }
 
@@ -695,7 +695,7 @@ abstract class BaseImport
      */
     public function getBytesRead()
     {
-        if (!$this->getFileIterator()) {
+        if (! $this->getFileIterator()) {
             return 0;
         }
 
@@ -721,7 +721,7 @@ abstract class BaseImport
      */
     public function setBeforeHandler($callback)
     {
-        if (!is_null($callback) && !is_callable($callback)) {
+        if (! is_null($callback) && ! is_callable($callback)) {
             throw new \InvalidArgumentException('Before event handler must be a valid callable (callback or object with an __invoke method), '.var_export($callback, true).' given');
         }
 
@@ -737,7 +737,7 @@ abstract class BaseImport
      */
     public function setAfterHandler($callback)
     {
-        if (!is_null($callback) && !is_callable($callback)) {
+        if (! is_null($callback) && ! is_callable($callback)) {
             throw new \InvalidArgumentException('After event handler must be a valid callable (callback or object with an __invoke method), '.var_export($callback, true).' given');
         }
 
@@ -753,7 +753,7 @@ abstract class BaseImport
      */
     public function setImportedHandler($callback)
     {
-        if (!is_null($callback) && !is_callable($callback)) {
+        if (! is_null($callback) && ! is_callable($callback)) {
             throw new \InvalidArgumentException('Imported event handler must be a valid callable (callback or object with an __invoke method), '.var_export($callback, true).' given');
         }
 
@@ -773,7 +773,7 @@ abstract class BaseImport
      */
     protected function validateFile($filePath, $message = 'File')
     {
-        if (!file_exists($filePath) || !is_readable($filePath)) {
+        if (! file_exists($filePath) || ! is_readable($filePath)) {
             throw new \RuntimeException("$message '{$filePath}' doesn't exist or is not readable.");
         }
 
@@ -791,7 +791,7 @@ abstract class BaseImport
      */
     private function callEventHandler($callback)
     {
-        if (!is_null($callback)) {
+        if (! is_null($callback)) {
             call_user_func($callback);
         }
     }

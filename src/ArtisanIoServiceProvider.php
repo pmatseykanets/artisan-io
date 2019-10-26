@@ -2,8 +2,8 @@
 
 namespace ArtisanIo;
 
-use ArtisanIo\Console\ImportDelimitedCommand;
 use Illuminate\Support\ServiceProvider;
+use ArtisanIo\Console\ImportDelimitedCommand;
 
 class ArtisanIoServiceProvider extends ServiceProvider
 {

@@ -1,31 +1,29 @@
 # artisan-io
 
-[![Laravel 5.1](https://img.shields.io/badge/Laravel-5.1-orange.svg)](http://laravel.com)
 [![StyleCI](https://styleci.io/repos/39307509/shield)](https://styleci.io/repos/39307509)
 [![Build Status](https://travis-ci.org/pmatseykanets/artisan-io.svg)](https://travis-ci.org/pmatseykanets/artisan-io)
 [![Latest Stable Version](https://poser.pugx.org/pmatseykanets/artisan-io/v/stable)](https://packagist.org/packages/pmatseykanets/artisan-io)
 [![License](https://poser.pugx.org/pmatseykanets/artisan-io/license)](https://packagist.org/packages/pmatseykanets/artisan-io)
 
-This package adds data import capability to your [Laravel 5](http://laravel.com/docs/5.1) project. It contains an artisan command `import:delimited` which allows you, as the name implies, to import delimited data (CSV, TSV, etc) into your local or remote database.
+This package adds data import capability to your [Laravel](http://laravel.com/) project. It contains an artisan command `import:delimited` which allows you, as the name implies, to import delimited data (CSV, TSV, etc) into your local or remote database.
 
 #### Main features:
 
-- Supports multiple database connections (defined in [`config\database.php`](http://laravel.com/docs/5.1/database#introduction)).
-- You can use either a table name or Eloquent model class to import your data. By using Eloquent model you can benefit from [mutators and accessors](http://laravel.com/docs/5.1/eloquent-mutators).
-- Several import modes:
+- Supports multiple database connections (defined in [`config\database.php`](http://laravel.com/docs/6.0/database#introduction)).
+- You can use either a table name or Eloquent model class to import your data. By using Eloquent model you can benefit from [mutators and accessors](http://laravel.com/docs/6.0/eloquent-mutators).
+- Import modes:
   - insert
   - insert-new
   - update
   - upsert
 - Row validation rules
 
-
 ## Installation
 
 You can install the package via composer:
 
 ```bash
-$ composer require pmatseykanets/artisan-io
+composer require pmatseykanets/artisan-io
 ```
 
 If you're using Laravel < 5.5 or if you have package auto-discovery turned off you have to manually register the service provider:
@@ -50,8 +48,8 @@ protected $commands = [
 
 ## Usage
 
-```
-$ php artisan import:delimited --help
+```bash
+php artisan import:delimited --help
 
 Usage:
   import:delimited [options] [--] <from> <to>
@@ -129,7 +127,7 @@ class Employee extends Model
 If `employees` table is empty and you'd like to populate it
 
 ```bash
-$ php artisan import:delimited employee.csv "\App\Employee" -f email:0,firstname:1,lastname:2,phone:4,employed_on:3 -m insert
+php artisan import:delimited employee.csv "\App\Employee" -f email:0,firstname:1,lastname:2,phone:4,employed_on:3 -m insert
 ```
 
 Note: *The buity of using Eloquent model in this case is that timestamps `created_at` and `updated_at` will be populated by Eloquent automatically.*
@@ -139,7 +137,7 @@ Note: *The buity of using Eloquent model in this case is that timestamps `create
 Now let's assume John's record is already present in the table. In order to update Jon's record and insert Jane's one you'd need to cnahge the mode and specify key field(s).
 
 ```bash
-$ php artisan import:delimited employee.csv "\App\Employee" -f email:0,firstname:1,lastname:2,phone:4,employed_on:3 -m upsert -k email
+php artisan import:delimited employee.csv "\App\Employee" -f email:0,firstname:1,lastname:2,phone:4,employed_on:3 -m upsert -k email
 ```
 
 #### Update
@@ -147,7 +145,7 @@ $ php artisan import:delimited employee.csv "\App\Employee" -f email:0,firstname
 If you want to just update phone numbers for existing records
 
 ```bash
-$ php artisan import:delimited employee.csv "\App\Employee" -f email:0,phone:4 -m update -k email
+php artisan import:delimited employee.csv "\App\Employee" -f email:0,phone:4 -m update -k email
 ```
 
 ### Field definition file
@@ -170,7 +168,7 @@ employed_on:3
 
 ### Row validation rules file
 
-A row validation rule file is simply a php file that returns an array of rules. You can any of the [available Laravel validation rules](http://laravel.com/docs/5.1/validation#available-validation-rules)
+A row validation rule file is simply a php file that returns an array of rules. You can any of the [available Laravel validation rules](http://laravel.com/docs/6.0/validation#available-validation-rules)
 
 #### Example `employee.rule`
 
@@ -186,7 +184,6 @@ return [
 ];
 ```
 
-
-### License
+## License
 
 The artisan-io is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT)

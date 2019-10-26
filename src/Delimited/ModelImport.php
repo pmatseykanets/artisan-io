@@ -25,11 +25,11 @@ class ModelImport extends BaseImport
     public function setModel($model)
     {
         if (is_string($model)) {
-            if (!$this->model = $this->makeModel($model)) {
+            if (! $this->model = $this->makeModel($model)) {
                 throw new \RuntimeException("Model $model doesn't exist.");
             }
         } else {
-            if (!$model instanceof Model) {
+            if (! $model instanceof Model) {
                 throw new \RuntimeException("Model should be of type '".Model::class."'.");
             }
             $this->model = $model;
@@ -112,7 +112,7 @@ class ModelImport extends BaseImport
             return;
         }
 
-        if (!$instance->exists) {
+        if (! $instance->exists) {
             $this->updateInstances($row, [$instance]);
         }
     }

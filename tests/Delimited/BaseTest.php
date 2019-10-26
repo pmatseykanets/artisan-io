@@ -2,19 +2,17 @@
 
 namespace ArtisanIo\Delimited;
 
-use ArtisanIo\TestCase;
 use Mockery as m;
+use ArtisanIo\TestCase;
 
 abstract class BaseTest extends TestCase
 {
-    protected $abstract;
-
     protected $emptyFile;
     protected $importFile;
     protected $fieldFile;
     protected $rulesFile;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -24,7 +22,7 @@ abstract class BaseTest extends TestCase
         $this->rulesFile = __DIR__.'/import.rules';
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         parent::tearDown();
 

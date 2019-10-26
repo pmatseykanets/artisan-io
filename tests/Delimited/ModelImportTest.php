@@ -2,8 +2,8 @@
 
 namespace ArtisanIo\Delimited;
 
-use Illuminate\Database\Eloquent\Model;
 use Mockery as m;
+use Illuminate\Database\Eloquent\Model;
 
 class ModelImportTest extends BaseTest
 {
@@ -35,7 +35,7 @@ class ModelImportTest extends BaseTest
 
         $import = $this->getInstance(compact('container'));
 
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
 
         $import->setTargetName($modelClass);
     }
