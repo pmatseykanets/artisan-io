@@ -189,7 +189,7 @@ class TableImportTest extends BaseTest
             ->setTable('table')
             ->setFields('foo,bar');
 
-        if (!is_null($keyFields)) {
+        if (! is_null($keyFields)) {
             $import->setKeyFields($keyFields);
         }
 
