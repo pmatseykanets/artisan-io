@@ -35,7 +35,7 @@ class ModelImportTest extends BaseTest
 
         $import = $this->getInstance(compact('container'));
 
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
 
         $import->setTargetName($modelClass);
     }
