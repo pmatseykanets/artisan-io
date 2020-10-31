@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.0](https://github.com/pmatseykanets/artisan-io/releases/tag/v3.0.0) - 2019-10-31
+
+### Changed
+
+- Support Laravel 7 and 8
+- Drop support for Laravel 5
+
 ## [2.0.0](https://github.com/pmatseykanets/artisan-io/releases/tag/v2.0.0) - 2019-10-25
 
 ### Changed
