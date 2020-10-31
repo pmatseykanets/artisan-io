@@ -7,10 +7,10 @@
 
 This package adds data import capability to your [Laravel](http://laravel.com/) project. It contains an artisan command `import:delimited` which allows you, as the name implies, to import delimited data (CSV, TSV, etc) into your local or remote database.
 
-#### Main features:
+Main features:
 
-- Supports multiple database connections (defined in [`config\database.php`](http://laravel.com/docs/6.0/database#introduction)).
-- You can use either a table name or Eloquent model class to import your data. By using Eloquent model you can benefit from [mutators and accessors](http://laravel.com/docs/6.0/eloquent-mutators).
+- Supports multiple database connections (defined in [`config\database.php`](http://laravel.com/docs/8.x/database#introduction)).
+- You can use either a table name or Eloquent model class to import your data. By using Eloquent model you can benefit from [mutators and accessors](http://laravel.com/docs/8.x/eloquent-mutators).
 - Import modes:
   - insert
   - insert-new

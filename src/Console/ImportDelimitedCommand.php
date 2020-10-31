@@ -2,12 +2,12 @@
 
 namespace ArtisanIo\Console;
 
-use Illuminate\Support\Str;
-use Illuminate\Console\Command;
 use ArtisanIo\Delimited\BaseImport;
 use ArtisanIo\Delimited\ModelImport;
 use ArtisanIo\Delimited\TableImport;
+use Illuminate\Console\Command;
 use Illuminate\Console\ConfirmableTrait;
+use Illuminate\Support\Str;
 
 class ImportDelimitedCommand extends Command
 {

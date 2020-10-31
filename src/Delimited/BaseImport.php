@@ -2,10 +2,10 @@
 
 namespace ArtisanIo\Delimited;
 
-use Illuminate\Support\Str;
 use Illuminate\Config\Repository as Config;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\DatabaseManager as DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Factory as Validator;
 
 abstract class BaseImport
