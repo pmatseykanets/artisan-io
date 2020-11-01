@@ -1,7 +1,7 @@
 # artisan-io
 
 [![StyleCI](https://styleci.io/repos/39307509/shield)](https://styleci.io/repos/39307509)
-[![Build Status](https://travis-ci.org/pmatseykanets/artisan-io.svg)](https://travis-ci.org/pmatseykanets/artisan-io)
+![tests](https://github.com/pmatseykanets/artisan-io/workflows/tests/badge.svg)
 [![Latest Stable Version](https://poser.pugx.org/pmatseykanets/artisan-io/v/stable)](https://packagist.org/packages/pmatseykanets/artisan-io)
 [![License](https://poser.pugx.org/pmatseykanets/artisan-io/license)](https://packagist.org/packages/pmatseykanets/artisan-io)
 
